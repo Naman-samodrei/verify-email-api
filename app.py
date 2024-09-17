@@ -3,9 +3,11 @@ import smtplib
 import dns.resolver
 import socket
 import time
+import streamlit as st
+import threading
+import requests
 
 app = Flask(__name__)
-
 # Address used for SMTP MAIL FROM command.
 FROM_ADDRESS = 'soaanxr@yopmail.com'
 
@@ -63,6 +65,37 @@ def verify_email_endpoint():
         return jsonify({'status': 'timeout', 'message': 'SMTP timeout or connection error'}), 408
     else:
         return jsonify({'status': 'bad', 'message': 'Invalid email address'}), 400
+    
 
-if __name__ == '__main__':
+
+def run_flask():
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# Initialize Streamlit interface
+def run_streamlit():
+    st.title("Email Verification Service")
+
+    email_input = st.text_input("Enter Email to Verify:")
+
+    if st.button("Verify Email"):
+        if email_input:
+            response = requests.post('http://127.0.0.1:5000/verify-email', json={'email': email_input})
+            result = response.json()
+            if result['status'] == 'success':
+                st.success(f"The email {email_input} is valid.")
+            elif result['status'] == 'timeout':
+                st.warning(f"SMTP timeout or connection error for {email_input}.")
+            else:
+                st.error(f"The email {email_input} is invalid.")
+        else:
+            st.error("Please enter an email address.")
+
+# Run Flask and Streamlit in separate threads
+if __name__ == '__main__':
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Wait for Flask to start
+    time.sleep(5)
+
+    run_streamlit()
