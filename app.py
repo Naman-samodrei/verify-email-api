@@ -3,15 +3,11 @@ import smtplib
 import dns.resolver
 import socket
 import time
-import streamlit as st
-from werkzeug.wrappers import Request, Response
-from werkzeug.serving import run_simple
+
+app = Flask(__name__)
 
 # Address used for SMTP MAIL FROM command.
 FROM_ADDRESS = 'soaanxr@yopmail.com'
-
-# Initialize Flask app
-app = Flask(__name__)
 
 def verify_email(address_to_verify):
     # Get domain for DNS lookup
@@ -68,24 +64,5 @@ def verify_email_endpoint():
     else:
         return jsonify({'status': 'bad', 'message': 'Invalid email address'}), 400
 
-# Streamlit UI
-st.title("Email Verification Tool")
-
-email_input = st.text_input("Enter an email address to verify:")
-if st.button("Verify"):
-    with st.spinner('Verifying email...'):
-        response = verify_email(email_input)
-        if response == 250:
-            st.success("Email is valid.")
-        elif response == 408:
-            st.error("SMTP timeout or connection error.")
-        else:
-            st.error("Invalid email address.")
-
-# Use Werkzeug to serve the Flask app instead of Flask's built-in server
-def run_flask_app():
-    run_simple('localhost', 5000, app)
-
-# Start the Flask app in the background when Streamlit starts
 if __name__ == '__main__':
-    run_flask_app()
+    app.run(debug=True, host='0.0.0.0', port=5000)
